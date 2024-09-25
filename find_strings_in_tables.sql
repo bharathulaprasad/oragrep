@@ -18,7 +18,7 @@ CREATE OR REPLACE PROCEDURE find_strings_in_tables (
         FROM all_tab_columns
         WHERE data_type LIKE '%' || p_datatype || '%'
         AND table_name NOT LIKE 'BIN$%'
-        AND OWNER = 'someowner';
+        AND OWNER = 'someowner'; --make sure this owner is the owner of the table you are looking for, and replace where ever someowner is referenced in this file
     
     -- Declare a variable to hold multiple search strings
     v_strings SYS.ODCIVARCHAR2LIST; 
@@ -67,15 +67,15 @@ BEGIN
                  --                    ' column: ' || table_info_list(i).column_name);
 
                 -- Execute the query and check if the string exists (with wildcard support)
-                EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM infodba.' || table_info_list(i).table_name ||
+                EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM someowner.' || table_info_list(i).table_name ||
                                   ' WHERE UPPER(' || table_info_list(i).column_name || ') LIKE :1'
                                   INTO exists_v USING search_string;
 
                 IF exists_v > 0 THEN
-                    dbms_output.put_line('String: "' || search_string || '" Exists in infodba.' || 
+                    dbms_output.put_line('String: "' || search_string || '" Exists in someowner.' || 
                                          table_info_list(i).table_name || ':' || table_info_list(i).column_name);
                 --ELSE
-                    --dbms_output.put_line('String: "' || search_string || '" Not found in infodba.' || 
+                    --dbms_output.put_line('String: "' || search_string || '" Not found in someowner.' || 
                      --                    table_info_list(i).table_name || ':' || table_info_list(i).column_name);
                 END IF;
             END LOOP;
