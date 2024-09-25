@@ -18,7 +18,7 @@ CREATE OR REPLACE PROCEDURE find_strings_in_tables (
         FROM all_tab_columns
         WHERE data_type LIKE '%' || p_datatype || '%'
         AND table_name NOT LIKE 'BIN$%'
-        AND OWNER = 'INFODBA';
+        AND OWNER = 'someowner';
     
     -- Declare a variable to hold multiple search strings
     v_strings SYS.ODCIVARCHAR2LIST; 
