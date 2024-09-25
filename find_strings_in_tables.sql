@@ -1,3 +1,58 @@
+create or replace PROCEDURE find_string_in_tables (
+    p_string_to_search IN VARCHAR2,
+    p_datatype IN VARCHAR2 DEFAULT 'VARCHAR2'
+) IS
+    TYPE table_info_type IS RECORD (
+        table_name   VARCHAR2(200),
+        column_name  VARCHAR2(200)
+    );
+
+    TYPE table_info_table IS TABLE OF table_info_type;
+    table_info_list table_info_table;
+
+    exists_v       NUMBER;
+    string_to_search_v VARCHAR2(200) := UPPER(p_string_to_search);
+
+    CURSOR cur_tables IS
+        SELECT table_name, column_name
+        FROM all_tab_columns
+        WHERE data_type LIKE '%' || p_datatype || '%'
+        AND data_length >= LENGTH(string_to_search_v)
+        AND table_name NOT LIKE 'BIN$%'
+        AND OWNER = 'someowner';
+BEGIN
+    OPEN cur_tables;
+    LOOP
+        FETCH cur_tables BULK COLLECT INTO table_info_list LIMIT 100;
+
+        EXIT WHEN table_info_list.COUNT = 0;
+
+        FOR i IN 1 .. table_info_list.COUNT LOOP
+            -- Print the table and column currently being searched
+            dbms_output.put_line('Searching in table: ' || table_info_list(i).table_name || 
+                              --   ' column: ' || table_info_list(i).column_name);
+
+            -- Execute the query and check if the string exists
+            EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM someowner.' || table_info_list(i).table_name ||
+                              ' WHERE UPPER(' || table_info_list(i).column_name || ') LIKE :1' 
+                              INTO exists_v USING '%' || string_to_search_v || '%';
+
+            IF exists_v > 0 THEN
+                dbms_output.put_line('String: ' || string_to_search_v || ' Exists in someowner.' || 
+                                     table_info_list(i).table_name || ':' || table_info_list(i).column_name);
+            ELSE
+                -- Print when the string is not found in the current table/column
+                dbms_output.put_line('String not found in table: ' || table_info_list(i).table_name || 
+                                     ' column: ' || table_info_list(i).column_name);
+            END IF;
+        END LOOP;
+    END LOOP;
+
+    CLOSE cur_tables;
+END find_string_in_tables;
+/
+
+
 CREATE OR REPLACE PROCEDURE find_strings_in_tables (
     p_strings_to_search IN VARCHAR2,    -- comma-separated search strings
     p_datatype IN VARCHAR2 DEFAULT 'VARCHAR2'
@@ -62,9 +117,9 @@ BEGIN
                 search_string := UPPER(TRIM(v_strings(j)));
                 
                 -- Print which table and column is currently being searched
-                --dbms_output.put_line('Searching for "' || search_string || '" in table: ' || 
-                --                     table_info_list(i).table_name || 
-                 --                    ' column: ' || table_info_list(i).column_name);
+                dbms_output.put_line('Searching for "' || search_string || '" in table: ' || 
+                                     table_info_list(i).table_name || 
+                                    ' column: ' || table_info_list(i).column_name);
 
                 -- Execute the query and check if the string exists (with wildcard support)
                 EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM someowner.' || table_info_list(i).table_name ||
@@ -74,9 +129,9 @@ BEGIN
                 IF exists_v > 0 THEN
                     dbms_output.put_line('String: "' || search_string || '" Exists in someowner.' || 
                                          table_info_list(i).table_name || ':' || table_info_list(i).column_name);
-                --ELSE
-                    --dbms_output.put_line('String: "' || search_string || '" Not found in someowner.' || 
-                     --                    table_info_list(i).table_name || ':' || table_info_list(i).column_name);
+                ELSE
+                    dbms_output.put_line('String: "' || search_string || '" Not found in someowner.' || 
+                                         table_info_list(i).table_name || ':' || table_info_list(i).column_name);
                 END IF;
             END LOOP;
         END LOOP;
