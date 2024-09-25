@@ -30,7 +30,7 @@ BEGIN
         FOR i IN 1 .. table_info_list.COUNT LOOP
             -- Print the table and column currently being searched
             dbms_output.put_line('Searching in table: ' || table_info_list(i).table_name || 
-                              --   ' column: ' || table_info_list(i).column_name);
+                                 ' column: ' || table_info_list(i).column_name);
 
             -- Execute the query and check if the string exists
             EXECUTE IMMEDIATE 'SELECT COUNT(*) FROM someowner.' || table_info_list(i).table_name ||
